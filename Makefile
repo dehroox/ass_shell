@@ -1,3 +1,5 @@
+MAKEFLAGS += --no-print-directory -s
+
 # Compiler and flags
 CC := clang
 BASE_CFLAGS := -std=c23 -Wpedantic -fno-common \
@@ -6,9 +8,9 @@ BASE_CFLAGS := -std=c23 -Wpedantic -fno-common \
               -ftrivial-auto-var-init=pattern -fstrict-flex-arrays=3 -Wall -Wextra -Wdouble-promotion -Wformat=2 -Wnull-dereference \
                 -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations \
                 -Wshadow -Wundef -Wfloat-equal -Wcast-align -Wpointer-arith \
-                -Wwrite-strings -Wunused-parameter -Wlogical-op -Wpacked \
-                -Wpadded -Wredundant-decls -Wjump-misses-init -Wcast-qual \
-                -Wconversion -Wswitch-default -Wswitch-enum -Wstack-usage=4096
+                -Wwrite-strings -Wunused-parameter -Wpacked \
+                -Wpadded -Wredundant-decls -Wcast-qual \
+                -Wconversion -Wswitch-default -Wswitch-enum
 LDFLAGS :=
 CPPFLAGS :=
 
@@ -47,7 +49,6 @@ $(BINDIR):
 # Link executable directly from sources
 $(TARGET): $(SOURCES) | $(BINDIR)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) $(SOURCES) -o $@
-	@echo "Build complete: $@"
 
 # Generate compile_commands.json for clangd
 compile_commands.json: $(SOURCES)
@@ -66,7 +67,6 @@ compile_commands.json: $(SOURCES)
 	done
 	@echo "]" >> $@.tmp
 	@mv $@.tmp $@
-	@echo "Generated compile_commands.json for clangd"
 
 # Build with compile_commands.json
 build: compile_commands.json $(TARGET)
@@ -74,17 +74,17 @@ build: compile_commands.json $(TARGET)
 # Clean build files
 clean:
 	@rm -rf $(BINDIR) compile_commands.json
-	@echo "Clean complete"
 
 # Very clean - remove all generated files
 distclean: clean
 	@rm -f tags cscope.*
-	@echo "Distclean complete"
 
 # Generate tags for navigation (optional)
 tags: $(SOURCES)
 	@ctags -R $(SRCDIR) $(INCDIR)
-	@echo "Generated tags file"
+
+run: $(TARGET)
+	@./$(TARGET)
 
 # Help target
 help:
