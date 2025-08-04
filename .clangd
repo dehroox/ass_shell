@@ -1,0 +1,59 @@
+CompileFlags:
+  Add:
+    - -std=c23
+    - -Wpedantic
+    - -fno-common
+    - -fno-plt
+    - -fno-semantic-interposition
+    - -fstrict-enums
+    - -fstrict-return
+    - -fvisibility=hidden
+    - -fstack-protector-strong
+    - -ftrivial-auto-var-init=pattern
+    - -fstrict-flex-arrays=3
+    - -Wall
+    - -Wextra
+    - -Wdouble-promotion
+    - -Wformat=2
+    - -Wnull-dereference
+    - -Wstrict-prototypes
+    - -Wmissing-prototypes
+    - -Wmissing-declarations
+    - -Wshadow
+    - -Wundef
+    - -Wfloat-equal
+    - -Wcast-align
+    - -Wpointer-arith
+    - -Wwrite-strings
+    - -Wunused-parameter
+    - -Wlogical-op
+    - -Wpacked
+    - -Wpadded
+    - -Wredundant-decls
+    - -Wjump-misses-init
+    - -Wcast-qual
+    - -Wconversion
+    - -Wswitch-default
+    - -Wswitch-enum
+    - -Wstack-usage=4096
+    - -g3
+    - -O0
+    - -DDEBUG
+
+Diagnostics:
+  ClangTidy:
+    Add:
+      - bugprone-*
+      - cert-*
+      - clang-analyzer-*
+      - performance-*
+      - portability-*
+      - readability-*
+      - misc-*
+Index:
+  Background: Build
+
+Completion:
+  AllScopes: true
+Hover:
+  ShowAKA: true
