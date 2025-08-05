@@ -8,8 +8,8 @@
 
 #define READLINE_BUFFER_SIZE 128
 static string readline(void) {
-  int buffer_size = READLINE_BUFFER_SIZE;
-  int current_position = 0;
+  uint16_t buffer_size = READLINE_BUFFER_SIZE;
+  uint16_t current_position = 0;
   string buffer = malloc(sizeof(char) * (size_t)buffer_size);
   int character;
 
@@ -24,12 +24,13 @@ static string readline(void) {
     // increment current_position only for valid characters
     current_position += ~((character == EOF) | (character == '\n')) & 1;
 
-    int need_realloc = (current_position >= buffer_size);
-    buffer_size += READLINE_BUFFER_SIZE * need_realloc;
+    bool need_realloc = (current_position >= buffer_size);
+    buffer_size += READLINE_BUFFER_SIZE * (uint8_t)need_realloc;
     string new_buffer = realloc(buffer, (size_t)buffer_size);
 
     memcpy(buffer, new_buffer,
-           sizeof(string) * (size_t)(need_realloc & (new_buffer != NULL)));
+           sizeof(string) *
+               (size_t)((uint8_t)need_realloc & (new_buffer != NULL)));
   } while ((character != EOF) & (character != '\n'));
 
   return buffer;
@@ -39,12 +40,12 @@ static string readline(void) {
 #define TOKEN_BUFFER_SIZE 64
 #define TOKEN_DELIMETERS "\t\r\n\a"
 static string *parse_line(string line) {
-  int buffer_size = TOKEN_BUFFER_SIZE;
-  int current_position = 0;
+  uint16_t buffer_size = TOKEN_BUFFER_SIZE;
+  uint16_t current_position = 0;
   string *tokens =
       (string *)malloc((unsigned long)buffer_size * sizeof(string));
   string token;
-  int is_null;
+  bool is_null;
 
   token = strtok(line, TOKEN_DELIMETERS);
   do {
@@ -52,8 +53,8 @@ static string *parse_line(string line) {
     tokens[current_position] = token;
     current_position += !is_null;
 
-    int need_realloc = (current_position >= buffer_size);
-    buffer_size += TOKEN_BUFFER_SIZE * need_realloc;
+    bool need_realloc = (current_position >= buffer_size);
+    buffer_size += TOKEN_BUFFER_SIZE * (uint8_t)need_realloc;
     string *clone = tokens;
     tokens =
         (string *)realloc((void *)clone, (size_t)buffer_size * sizeof(string));
