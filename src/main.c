@@ -6,7 +6,7 @@
 
 #define string char *
 
-#define READLINE_BUFFER_SIZE 25
+#define READLINE_BUFFER_SIZE 128
 static string readline(void) {
   int buffer_size = READLINE_BUFFER_SIZE;
   int current_position = 0;
