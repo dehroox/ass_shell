@@ -34,17 +34,47 @@ static string readline(void) {
 
   return buffer;
 }
+#undef READLINE_BUFFER_SIZE
+
+#define TOKEN_BUFFER_SIZE 64
+#define TOKEN_DELIMETERS "\t\r\n\a"
+static string *parse_line(string line) {
+  int buffer_size = TOKEN_BUFFER_SIZE;
+  int current_position = 0;
+  string *tokens =
+      (string *)malloc((unsigned long)buffer_size * sizeof(string));
+  string token;
+  int is_null;
+
+  token = strtok(line, TOKEN_DELIMETERS);
+  do {
+    is_null = (token == NULL);
+    tokens[current_position] = token;
+    current_position += !is_null;
+
+    int need_realloc = (current_position >= buffer_size);
+    buffer_size += TOKEN_BUFFER_SIZE * need_realloc;
+    string *clone = tokens;
+    tokens =
+        (string *)realloc((void *)clone, (size_t)buffer_size * sizeof(string));
+    token = strtok(NULL, TOKEN_DELIMETERS);
+  } while (!is_null);
+
+  return tokens;
+}
 
 int main(void) {
   string line = NULL;
-  string args[] = {0};
+  string *args;
   int status = 0;
 
   do {
     printf("> ");
     line = readline();
+    args = parse_line(line);
 
     free(line);
+    free((void *)args);
   } while (!status);
   return 0;
 }
