@@ -39,6 +39,7 @@ CompileFlags:
     - -g3
     - -O0
     - -DDEBUG
+    - -Wno-bool-operation
 
 Diagnostics:
   ClangTidy:

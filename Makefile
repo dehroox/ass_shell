@@ -10,7 +10,7 @@ BASE_CFLAGS := -std=c23 -Wpedantic -fno-common \
                 -Wshadow -Wundef -Wfloat-equal -Wcast-align -Wpointer-arith \
                 -Wwrite-strings -Wunused-parameter -Wpacked \
                 -Wpadded -Wredundant-decls -Wcast-qual \
-                -Wconversion -Wswitch-default -Wswitch-enum
+                -Wconversion -Wswitch-default -Wswitch-enum -Wno-bool-operation
 LDFLAGS :=
 CPPFLAGS :=
 

@@ -1,4 +1,4 @@
 # Build artifacts
-/build/
+/bin/
 /compile_commands.json
 .cache/
