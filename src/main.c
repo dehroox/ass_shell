@@ -47,7 +47,7 @@ static inline char *readline(void) {
   if (unlikely(position == 0 && character == EOF)) {
     return NULL;
   }
-  
+
   char *result = malloc(position + 1);
   if (unlikely(!result)) {
     return NULL;
@@ -58,11 +58,12 @@ static inline char *readline(void) {
 }
 
 static inline char **parse_line(char *line) {
-  if (unlikely(!line)) {
-    return NULL;
-  }
-  size_t approx_tokens = 8;
-  size_t buffer_size = approx_tokens;
+  // if (unlikely(!line)) {
+  //   return NULL;
+  // } 
+  // already handled in main()
+
+  size_t buffer_size = 8;
   size_t position = 0;
   char **tokens = malloc(buffer_size * sizeof(char *));
   if (unlikely(!tokens)) {
@@ -91,9 +92,10 @@ static inline char **parse_line(char *line) {
 }
 
 static inline int execute_process(char **args) {
-  if (unlikely(!args || !args[0])) {
-    return 0;
-  }
+  // if (unlikely(!args || !args[0])) {
+  //   return 0;
+  // }
+  // already handled in main
 
   pid_t pid = fork();
   if (unlikely(pid == 0)) {
@@ -152,6 +154,8 @@ int main(void) {
   char *line;
   char **args;
   int status = 0;
+
+  setvbuf(stdout, NULL, _IOLBF, 0);
 
   while (likely(!status)) {
     write(STDOUT_FILENO, "> ", 2);
