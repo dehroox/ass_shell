@@ -3,13 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 #define string char * // this is probably malpractice but i likey
 
-#define READLINE_BUFFER_SIZE 128
+#define READLINE_BUFFER_SIZE 256
 static string readline(void) {
-  uint16_t buffer_size = READLINE_BUFFER_SIZE;
-  uint16_t current_position = 0;
+  int buffer_size = READLINE_BUFFER_SIZE;
+  int current_position = 0;
   string buffer = malloc(sizeof(char) * (size_t)buffer_size);
   int character;
 
@@ -24,8 +27,8 @@ static string readline(void) {
     // increment current_position only for valid characters
     current_position += ~((character == EOF) | (character == '\n')) & 1;
 
-    bool need_realloc = (current_position >= buffer_size);
-    buffer_size += READLINE_BUFFER_SIZE * (uint8_t)need_realloc;
+    int need_realloc = (current_position >= buffer_size);
+    buffer_size += READLINE_BUFFER_SIZE * need_realloc;
     string new_buffer = realloc(buffer, (size_t)buffer_size);
     uintptr_t success_mask = (uintptr_t)(new_buffer != NULL);
     buffer = (string)(((uintptr_t)new_buffer & success_mask) |
@@ -38,10 +41,10 @@ static string readline(void) {
 #undef READLINE_BUFFER_SIZE
 
 #define TOKEN_BUFFER_SIZE 64
-#define TOKEN_DELIMETERS "\t\r\n\a"
+#define TOKEN_DELIMETERS " \t\r\n\a"
 static string *parse_line(string line) {
-  uint16_t buffer_size = TOKEN_BUFFER_SIZE;
-  uint16_t current_position = 0;
+  int buffer_size = TOKEN_BUFFER_SIZE;
+  int current_position = 0;
   string *tokens =
       (string *)malloc((unsigned long)buffer_size * sizeof(string));
   string token;
@@ -53,11 +56,11 @@ static string *parse_line(string line) {
     tokens[current_position] = token;
     current_position += !is_null;
 
-    bool need_realloc = (current_position >= buffer_size);
-    buffer_size += TOKEN_BUFFER_SIZE * (uint8_t)need_realloc;
+    int need_realloc = (current_position >= buffer_size);
+    buffer_size += TOKEN_BUFFER_SIZE * need_realloc;
 
-    string *new_tokens =
-        (string *)realloc((void *)tokens, buffer_size * sizeof(char *));
+    string *new_tokens = (string *)realloc(
+        (void *)tokens, (unsigned long)buffer_size * sizeof(char *));
     uintptr_t success_mask = (uintptr_t)(new_tokens != NULL);
     tokens = (string *)(((uintptr_t)new_tokens & success_mask) |
                         ((uintptr_t)tokens & ~success_mask));
@@ -70,6 +73,26 @@ static string *parse_line(string line) {
 #undef TOKEN_BUFFER_SIZE
 #undef TOKEN_DELIMETERS
 
+static int execute_process(string *args) {
+  pid_t pid;
+  int status;
+
+  pid = fork();
+  if (pid == 0) {
+    if (execvp(args[0], args) == -1) {
+      perror("program failed:");
+    }
+  } else if (pid < 0) {
+    perror("failed to fork:");
+  } else {
+    do {
+      waitpid(pid, &status, WUNTRACED);
+    } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+  }
+
+  return 1;
+}
+
 int main(void) {
   string line = NULL;
   string *args;
@@ -79,9 +102,10 @@ int main(void) {
     printf("> ");
     line = readline();
     args = parse_line(line);
+    status = execute_process(args);
 
     free(line);
     free((void *)args);
-  } while (!status);
+  } while (status);
   return 0;
 }
