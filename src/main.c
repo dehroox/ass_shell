@@ -67,6 +67,8 @@ static string *parse_line(string line) {
 
   return tokens;
 }
+#undef TOKEN_BUFFER_SIZE
+#undef TOKEN_DELIMETERS
 
 int main(void) {
   string line = NULL;
