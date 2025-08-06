@@ -1,4 +1,4 @@
-
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,13 +90,15 @@ static int execute_process(string *args) {
     } while (!WIFEXITED(status) && !WIFSIGNALED(status));
   }
 
-  return 1;
+  return 0;
 }
 
 int main(void) {
   string line = NULL;
   string *args;
   int status = 0;
+
+  (void)signal(SIGINT, SIG_IGN);
 
   do {
     printf("> ");
@@ -106,6 +108,7 @@ int main(void) {
 
     free(line);
     free((void *)args);
-  } while (status);
+  } while (!status);
+
   return 0;
 }
