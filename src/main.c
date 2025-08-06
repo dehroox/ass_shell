@@ -74,10 +74,9 @@ static string *parse_line(string line) {
 #undef TOKEN_DELIMETERS
 
 static int execute_process(string *args) {
-  pid_t pid;
+  pid_t pid = fork();
   int status;
-
-  pid = fork();
+  
   if (pid == 0) {
     if (execvp(args[0], args) == -1) {
       perror("program failed:");
