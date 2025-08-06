@@ -32,6 +32,9 @@ ifeq ($(BUILD_TYPE),debug)
 else ifeq ($(BUILD_TYPE),release)
 	TARGET := $(BINDIR)/main-release.exe
 	CFLAGS := $(BASE_CFLAGS) -DNDEBUG -O3 -flto -pipe
+else ifeq ($(BUILD_TYPE),small)
+	TARGET := $(BINDIR)/main-small.exe
+	CFLAGS := $(BASE_CFLAGS) -DNDEBUG -Os -flto -pipe
 else
 	TARGET := $(BINDIR)/main-dev.exe
 	CFLAGS := $(BASE_CFLAGS) -O2
@@ -112,5 +115,8 @@ debug:
 
 release:
 	@$(MAKE) BUILD_TYPE=release
+
+small:
+	@$(MAKE) BUILD_TYPE=small
 
 .DEFAULT_GOAL := build
