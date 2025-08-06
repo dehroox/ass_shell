@@ -47,8 +47,7 @@ static inline char *readline(void) {
   if (unlikely(position == 0 && character == EOF)) {
     return NULL;
   }
-
-  // Allocate final string from stack buffer
+  
   char *result = malloc(position + 1);
   if (unlikely(!result)) {
     return NULL;
