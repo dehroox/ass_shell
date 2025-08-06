@@ -51,6 +51,7 @@ Diagnostics:
       - portability-*
       - readability-*
       - misc-*
+    Remove: performance-no-int-to-ptr
 Index:
   Background: Build
 

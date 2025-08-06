@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define string char *
+#define string char * // this is probably malpractice but i likey
 
 #define READLINE_BUFFER_SIZE 128
 static string readline(void) {
@@ -27,10 +27,10 @@ static string readline(void) {
     bool need_realloc = (current_position >= buffer_size);
     buffer_size += READLINE_BUFFER_SIZE * (uint8_t)need_realloc;
     string new_buffer = realloc(buffer, (size_t)buffer_size);
+    uintptr_t success_mask = (uintptr_t)(new_buffer != NULL);
+    buffer = (string)(((uintptr_t)new_buffer & success_mask) |
+                      ((uintptr_t)buffer & ~success_mask));
 
-    memcpy(buffer, new_buffer,
-           sizeof(string) *
-               (size_t)((uint8_t)need_realloc & (new_buffer != NULL)));
   } while ((character != EOF) & (character != '\n'));
 
   return buffer;
@@ -55,9 +55,13 @@ static string *parse_line(string line) {
 
     bool need_realloc = (current_position >= buffer_size);
     buffer_size += TOKEN_BUFFER_SIZE * (uint8_t)need_realloc;
-    string *clone = tokens;
-    tokens =
-        (string *)realloc((void *)clone, (size_t)buffer_size * sizeof(string));
+
+    string *new_tokens =
+        (string *)realloc((void *)tokens, buffer_size * sizeof(char *));
+    uintptr_t success_mask = (uintptr_t)(new_tokens != NULL);
+    tokens = (string *)(((uintptr_t)new_tokens & success_mask) |
+                        ((uintptr_t)tokens & ~success_mask));
+
     token = strtok(NULL, TOKEN_DELIMETERS);
   } while (!is_null);
 
