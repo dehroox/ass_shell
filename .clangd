@@ -51,7 +51,12 @@ Diagnostics:
       - portability-*
       - readability-*
       - misc-*
-    Remove: performance-no-int-to-ptr
+    Remove: 
+      - performance-no-int-to-ptr
+      - readability-avoid-nested-conditional-operator
+      - bugprone-multi-level-implicit-pointer-conversion
+      - cert-err33-c
+      - readability-magic-numbers
 Index:
   Background: Build
 

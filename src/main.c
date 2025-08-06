@@ -1,125 +1,174 @@
 #include <signal.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#define string char *
+#define HEAP_BUFFER_SIZE 256
+#define STACK_BUFFER_SIZE 128
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
-#define READLINE_BUFFER_SIZE 256
-static string readline(void) {
-  int buffer_size = READLINE_BUFFER_SIZE;
-  int position = 0;
-  string buffer = malloc(sizeof(char) * (size_t)buffer_size);
+static inline char *readline(void) {
+  char stack_buffer[STACK_BUFFER_SIZE];
+  size_t position = 0;
   int character;
 
-  do {
-    character = getchar();
-    buffer[position] =
-        (char)((~((character == EOF) | (character == '\n')) & character) |
-               (((character == EOF) | (character == '\n')) & '\0'));
-    position += (~((character == EOF) | (character == '\n'))) & 1;
-    int need_realloc = (position >= buffer_size - 1);
-    buffer_size += READLINE_BUFFER_SIZE * need_realloc;
-    string new_buffer = realloc(buffer, (size_t)buffer_size);
-    uintptr_t success_mask = (uintptr_t)(new_buffer != NULL);
-    buffer = (string)(((uintptr_t)new_buffer & success_mask) |
-                      ((uintptr_t)buffer & ~success_mask));
-  } while ((character != EOF) & (character != '\n'));
+  while ((character = getchar()) != EOF && character != '\n') {
+    if (unlikely(position < sizeof(stack_buffer) - 1)) {
+      stack_buffer[position++] = (char)character;
+    } else {
+      char *heap_buffer = malloc(HEAP_BUFFER_SIZE);
+      if (unlikely(!heap_buffer)) {
+        return NULL;
+      }
 
-  return buffer;
+      __builtin_memcpy(heap_buffer, stack_buffer, sizeof(stack_buffer));
+
+      size_t buffer_size = HEAP_BUFFER_SIZE;
+      while ((character = getchar()) != EOF && character != '\n') {
+        heap_buffer[position++] = (char)character;
+        if (unlikely(position >= buffer_size - 1)) {
+          buffer_size += HEAP_BUFFER_SIZE;
+          char *new_buffer = realloc(heap_buffer, buffer_size);
+          if (unlikely(!new_buffer)) {
+            free(heap_buffer);
+            return NULL;
+          }
+          heap_buffer = new_buffer;
+        }
+      }
+      heap_buffer[position] = '\0';
+      return heap_buffer;
+    }
+  }
+
+  if (unlikely(position == 0 && character == EOF)) {
+    return NULL;
+  }
+
+  // Allocate final string from stack buffer
+  char *result = malloc(position + 1);
+  if (unlikely(!result)) {
+    return NULL;
+  }
+  __builtin_memcpy(result, stack_buffer, position);
+  result[position] = '\0';
+  return result;
 }
-#undef READLINE_BUFFER_SIZE
 
-#define TOKEN_BUFFER_SIZE 64
-#define TOKEN_DELIMETERS " \t\r\n\a"
-static string *parse_line(string line) {
-  int buffer_size = TOKEN_BUFFER_SIZE;
-  int position = 0;
-  string *tokens =
-      (string *)malloc((unsigned long)buffer_size * sizeof(string));
-  string token;
-  int is_null;
+static inline char **parse_line(char *line) {
+  if (unlikely(!line)) {
+    return NULL;
+  }
+  size_t approx_tokens = 8;
+  size_t buffer_size = approx_tokens;
+  size_t position = 0;
+  char **tokens = malloc(buffer_size * sizeof(char *));
+  if (unlikely(!tokens)) {
+    return NULL;
+  }
 
-  token = strtok(line, TOKEN_DELIMETERS);
-  do {
-    is_null = (token == NULL);
-    tokens[position] = token;
-    position += !is_null;
-    int need_realloc = (position >= buffer_size - 1);
-    buffer_size += TOKEN_BUFFER_SIZE * need_realloc;
-    string *new_tokens = (string *)realloc(
-        (void *)tokens, (unsigned long)buffer_size * sizeof(string));
-    uintptr_t success_mask = (uintptr_t)(new_tokens != NULL);
-    tokens = (string *)(((uintptr_t)new_tokens & success_mask) |
-                        ((uintptr_t)tokens & ~success_mask));
-    token = strtok(NULL, TOKEN_DELIMETERS);
-  } while (!is_null);
+  char *token = strtok(line, " \t\r\n");
+  while (likely(token != NULL)) {
+    tokens[position++] = token;
 
+    if (unlikely(position >= buffer_size)) {
+      buffer_size <<= 1;
+      char **new_tokens = realloc(tokens, buffer_size * sizeof(char *));
+      if (unlikely(!new_tokens)) {
+        free(tokens);
+        return NULL;
+      }
+      tokens = new_tokens;
+    }
+
+    token = strtok(NULL, " \t\r\n");
+  }
+
+  tokens[position] = NULL;
   return tokens;
 }
-#undef TOKEN_BUFFER_SIZE
-#undef TOKEN_DELIMETERS
 
-static int execute_process(string *args) {
-  pid_t pid = fork();
-  if (pid == 0) {
-    execvp(args[0], args);
-    exit(1);
-  } else if (pid > 0) {
-    int status;
-    waitpid(pid, &status, 0);
+static inline int execute_process(char **args) {
+  if (unlikely(!args || !args[0])) {
+    return 0;
   }
+
+  pid_t pid = fork();
+  if (unlikely(pid == 0)) {
+    execvp(args[0], args);
+    _exit(EXIT_FAILURE);
+  }
+  if (likely(pid > 0)) {
+    int status;
+    while (waitpid(pid, &status, 0) == -1) {
+      __builtin_ia32_pause();
+    }
+  }
+
   return 0;
 }
 
-static int cd(string *args) {
+static inline int cd(char **args) {
   const char *dir = (args && args[1]) ? args[1] : getenv("HOME");
-  if (dir) {
+  if (likely(dir)) {
     chdir(dir);
   }
   return 0;
 }
 
-static int exit_() { return 1; }
+static inline int exit_(void) { return 1; }
 
-static int shell_dispatch(string *args) {
-  if (!args || !args[0]) {
+static inline int shell_dispatch(char **args) {
+  if (unlikely(!args || !args[0])) {
     return 0;
   }
-  string cmd = args[0];
-  int len = 0;
-  while (cmd[len]) {
-    len++;
-  }
 
-  if (cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == '\0') {
-    return cd(args);
-  }
-  if (cmd[0] == 'e' && cmd[1] == 'x' && cmd[2] == 'i' && cmd[3] == 't' &&
-      cmd[4] == '\0') {
-    return exit_();
+  const char *cmd = args[0];
+
+  switch (cmd[0]) {
+  case 'c':
+    if (likely(cmd[1] == 'd' && cmd[2] == '\0')) {
+      return cd(args);
+    }
+    break;
+  case 'e':
+    if (likely(cmd[1] == 'x' && cmd[2] == 'i' && cmd[3] == 't' &&
+               cmd[4] == '\0')) {
+      return exit_();
+    }
+    break;
+  default:
+    return execute_process(args);
   }
 
   return execute_process(args);
 }
 
 int main(void) {
-  (void)signal(SIGINT, SIG_IGN);
-  string line;
-  string *args;
+  signal(SIGINT, SIG_IGN);
+
+  char *line;
+  char **args;
   int status = 0;
 
-  do {
-    printf("> ");
+  while (likely(!status)) {
+    write(STDOUT_FILENO, "> ", 2);
     line = readline();
+    if (unlikely(!line)) {
+      break;
+    }
+
     args = parse_line(line);
-    status = shell_dispatch(args);
+    if (likely(args)) {
+      status = shell_dispatch(args);
+      free(args);
+    }
+
     free(line);
-    free((void *)args);
-  } while (!status);
+  }
 
   return 0;
 }
