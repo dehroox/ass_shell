@@ -16,7 +16,7 @@ static inline char *readline(void) {
   int character;
 
   while ((character = getchar()) != EOF && character != '\n') {
-    if (unlikely(position < sizeof(stack_buffer) - 1)) {
+    if (likely(position < sizeof(stack_buffer) - 1)) {
       stack_buffer[position++] = (char)character;
     } else {
       char *heap_buffer = malloc(HEAP_BUFFER_SIZE);
@@ -60,7 +60,7 @@ static inline char *readline(void) {
 static inline char **parse_line(char *line) {
   // if (unlikely(!line)) {
   //   return NULL;
-  // } 
+  // }
   // already handled in main()
 
   size_t buffer_size = 8;
