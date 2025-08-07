@@ -7,6 +7,7 @@
 
 #define HEAP_BUFFER_SIZE 256
 #define STACK_BUFFER_SIZE 128
+#define HISTORY_PATH_SIZE 128
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
@@ -146,7 +147,7 @@ static inline int shell_dispatch(char **args) {
     return execute_process(args);
   }
 
-  return execute_process(args);
+  return 0;
 }
 
 int main(void) {
@@ -154,7 +155,7 @@ int main(void) {
 
   char *line;
   char **args;
-  char history_path[128];
+  char history_path[HISTORY_PATH_SIZE];
   int status = 0;
   snprintf(history_path, sizeof(history_path), "%s/%s", getenv("HOME"),
            ".ash_history");
