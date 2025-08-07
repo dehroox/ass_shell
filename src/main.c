@@ -25,7 +25,7 @@ static inline char *readline(void) {
         return NULL;
       }
 
-      __builtin_memcpy(heap_buffer, stack_buffer, sizeof(stack_buffer));
+      memcpy(heap_buffer, stack_buffer, sizeof(stack_buffer));
 
       size_t buffer_size = HEAP_BUFFER_SIZE;
       while ((character = getchar()) != EOF && character != '\n') {
@@ -53,7 +53,7 @@ static inline char *readline(void) {
   if (unlikely(!result)) {
     return NULL;
   }
-  __builtin_memcpy(result, stack_buffer, position);
+  memcpy(result, stack_buffer, position);
   result[position] = '\0';
   return result;
 }
