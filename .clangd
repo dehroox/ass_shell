@@ -57,6 +57,7 @@ Diagnostics:
       - bugprone-multi-level-implicit-pointer-conversion
       - cert-err33-c
       - readability-magic-numbers
+      - bugprone-easily-swappable-parameters
 Index:
   Background: Build
 

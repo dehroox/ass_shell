@@ -148,12 +148,30 @@ static inline int shell_dispatch(char **args) {
   return execute_process(args);
 }
 
+static inline int write_history(char *path, char *content) {
+  FILE *write_target = fopen(path, "a");
+
+  if (unlikely(write_target == NULL)) {
+    perror("Failed to open WRITE_TARGET for write_history :(");
+    return 1;
+  }
+
+  fprintf(write_target, "%s\n", content);
+  fclose(write_target);
+
+  return 0;
+}
+
 int main(void) {
   signal(SIGINT, SIG_IGN);
 
   char *line;
   char **args;
+  char history_path[128];
   int status = 0;
+
+  snprintf(history_path, sizeof(history_path), "%s/%s", getenv("HOME"),
+           ".ash_history");
 
   setvbuf(stdout, NULL, _IOLBF, 0);
 
@@ -164,6 +182,7 @@ int main(void) {
       break;
     }
 
+    write_history(history_path, line);
     args = parse_line(line);
     if (likely(args)) {
       status = shell_dispatch(args);
