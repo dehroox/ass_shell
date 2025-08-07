@@ -102,6 +102,7 @@ static inline int execute_process(char **args) {
   pid_t pid = fork();
   if (unlikely(pid == 0)) {
     execvp(args[0], args);
+    perror("execvp");
     _exit(EXIT_FAILURE);
   }
   if (likely(pid > 0)) {
