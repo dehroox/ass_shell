@@ -176,6 +176,7 @@ int main(void) {
     }
 
     fprintf(write_target, "%s\n", line);
+    fflush(write_target);
     args = parse_line(line);
     if (likely(args)) {
       status = shell_dispatch(args);
